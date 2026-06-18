@@ -376,7 +376,7 @@ td export snapshot.json
 
 ## 8. 未来规划
 
-- **Phase 2**：套 Tauri / PyObjC 壳，做 macOS 菜单栏常驻小组件
 - **更多 provider**：智谱 GLM、阿里云百炼、火山方舟
 - **告警系统**：阈值突破时通过 macOS Notification Center、Slack、邮件通知
 - **历史数据**：存储到本地 SQLite，画趋势图
+- **macOS ControlWidget**：系统控制中心小组件（需 macOS 26 SDK）

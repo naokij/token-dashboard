@@ -1,6 +1,9 @@
 # Token Dashboard
 
-统一的 AI 服务用量查看器，CLI 工具，支持 OpenCode、MiniMax、MiMo、讯飞、DeepSeek。
+统一的 AI 服务用量查看器，支持 OpenCode、MiniMax、MiMo、讯飞、DeepSeek。
+
+- **CLI**：Python 终端工具，`td status` / `td watch` 查看用量
+- **GUI**：macOS 菜单栏应用，原生 Swift/SwiftUI，无 Python 依赖 → [GUI 文档](docs/gui.md)
 
 ## 支持的 Provider
 
@@ -148,10 +151,10 @@ src/td/
 
 ## 未来规划
 
-- **Phase 2**：macOS 菜单栏小组件
 - **更多 provider**：智谱 GLM、阿里云百炼、火山方舟
 - **告警系统**：阈值突破时通知
 - **历史数据**：SQLite 存储，趋势图
+- **macOS ControlWidget**：系统控制中心小组件（需 macOS 26 SDK）
 
 ## License
 
