@@ -30,12 +30,15 @@ final class XunfeiAdapter: Adapter {
     }
 
     func fetch(store: CredentialStore) async throws -> UsageSnapshot {
-        guard let cookieCred = store.loadCredential(provider: providerId.rawValue, kind: "cookie", account: account),
-              let cookies = cookieCred["cookies"] as? [[String: Any]], !cookies.isEmpty else {
+        guard let cookieCred = store.loadCredential(provider: providerId.rawValue, kind: "cookie", account: account) else {
             throw AuthRequiredError(message: "Xunfei: please add cookie credentials")
         }
+        let cookies = cookieCred["cookies"] as? [[String: Any]] ?? []
+        guard !cookies.isEmpty else {
+            throw AuthRequiredError(message: "Xunfei: no cookies found, please re-add your cookie")
+        }
 
-        let cookieHeader = formatCookieHeader(cookies)
+        let cookieHeader = CookieHelper.formatCookieHeader(credential: cookieCred)
 
         var components = URLComponents(string: "https://maas.xfyun.cn/api/v1/gpt-finetune/coding-plan/list")!
         components.queryItems = [
@@ -136,12 +139,5 @@ final class XunfeiAdapter: Adapter {
         }
 
         return windows
-    }
-
-    private func formatCookieHeader(_ cookies: [[String: Any]]) -> String {
-        cookies.compactMap { c -> String? in
-            guard let name = c["name"] as? String, let value = c["value"] as? String else { return nil }
-            return "\(name)=\(value)"
-        }.joined(separator: "; ")
     }
 }

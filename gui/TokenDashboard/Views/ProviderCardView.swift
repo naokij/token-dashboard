@@ -17,6 +17,7 @@ struct ProviderCardView: View {
                     Text(planName)
                         .font(.caption)
                         .foregroundColor(.secondary)
+                        .lineLimit(1)
                 }
             }
 
@@ -34,32 +35,43 @@ struct ProviderCardView: View {
                 }
             } else {
                 ForEach(snapshot.windows) { window in
-                    HStack(spacing: 4) {
-                        Text(window.label)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .frame(width: 80, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Text(window.label)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .frame(width: 80, alignment: .leading)
 
-                        UsageBarView(usedPct: window.usedPct)
+                            UsageBarView(usedPct: window.usedPct)
+                        }
 
                         if let resetAt = window.resetAt {
                             Text("Resets in \(formatRemaining(resetAt))")
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
+                                .padding(.leading, 84)
                         }
                     }
                 }
 
                 if let balance = snapshot.balance, let unit = snapshot.balanceUnit {
-                    Text(String(format: "balance: %.2f %@", balance, unit.rawValue))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 4) {
+                        Text("balance")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .frame(width: 80, alignment: .leading)
+                        Text(String(format: "%.2f %@", balance, unit.rawValue))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
                 }
             }
 
             ForEach(snapshot.warnings, id: \.self) { warning in
                 Text(warning)
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundColor(.orange)
             }
         }
