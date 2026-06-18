@@ -18,8 +18,11 @@ struct TokenDashboardApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Settings {
+        Window("Token Dashboard Settings", id: "settings") {
             SettingsView(fetcher: fetcher, config: config)
         }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
     }
 }
