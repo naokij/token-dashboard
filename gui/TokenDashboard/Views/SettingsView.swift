@@ -21,7 +21,7 @@ struct SettingsView: View {
             generalTab
                 .tabItem { Label("General", systemImage: "gearshape") }
         }
-        .frame(width: 450, height: 350)
+        .frame(width: 500, height: 400)
     }
 
     private var credentialsTab: some View {
@@ -37,12 +37,12 @@ struct SettingsView: View {
             let modes = adapter.supportedAuthModes()
 
             if modes.contains("api_key") {
-                SecureField("API Key", text: $apiKey)
+                SecureField("API Key (e.g. sk-...)", text: $apiKey)
                     .textFieldStyle(.roundedBorder)
             }
 
             if modes.contains("cookie") {
-                TextField("Cookies JSON", text: $cookieText, axis: .vertical)
+                TextField("Cookie (name=value; ...  or  paste cURL)", text: $cookieText, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .lineLimit(3...6)
 
@@ -50,6 +50,10 @@ struct SettingsView: View {
                     TextField("Workspace ID (optional)", text: $workspaceId)
                         .textFieldStyle(.roundedBorder)
                 }
+
+                Text("Paste from browser: F12 → Network → Copy as cURL, or just the Cookie header value")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
             }
 
             Button("Save") {
@@ -59,12 +63,12 @@ struct SettingsView: View {
             if let msg = saveMessage {
                 Text(msg)
                     .font(.caption)
-                    .foregroundColor(.green)
+                    .foregroundColor(msg.hasPrefix("Error") ? .red : .green)
             }
 
             Divider()
 
-            Button("Migrate from legacy credentials.json") {
+            Button("Migrate from CLI credentials.json") {
                 do {
                     try credentialStore.migrateFromLegacy()
                     migrateMessage = "Migration complete"
@@ -115,14 +119,16 @@ struct SettingsView: View {
             apiKey = ""
         }
 
-            if modes.contains("cookie"),
-               let cred = credentialStore.loadCredential(provider: selectedProvider.rawValue, kind: "cookie", account: "default") {
-                if let cookies = cred["cookies"] as? [[String: Any]],
-                   let data = try? JSONSerialization.data(withJSONObject: cookies, options: .prettyPrinted) {
-                    cookieText = String(data: data, encoding: .utf8) ?? ""
-                }
-                workspaceId = cred["workspace_id"] as? String ?? ""
-            } else {
+        if modes.contains("cookie"),
+           let cred = credentialStore.loadCredential(provider: selectedProvider.rawValue, kind: "cookie", account: "default") {
+            if let cookies = cred["cookies"] as? [[String: Any]] {
+                cookieText = cookies.compactMap { c in
+                    guard let name = c["name"] as? String, let value = c["value"] as? String else { return nil }
+                    return "\(name)=\(value)"
+                }.joined(separator: "; ")
+            }
+            workspaceId = cred["workspace_id"] as? String ?? ""
+        } else {
             cookieText = ""
             workspaceId = ""
         }
@@ -145,27 +151,85 @@ struct SettingsView: View {
             }
 
             if modes.contains("cookie") && !cookieText.isEmpty {
-                var value: [String: Any] = [:]
-                if let data = cookieText.data(using: .utf8),
-                   let cookies = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
-                    value["cookies"] = cookies
+                let cookies = parseCookieInput(cookieText)
+                if cookies.isEmpty {
+                    saveMessage = "Error: no valid cookies found in input"
+                    return
                 }
+                var value: [String: Any] = ["cookies": cookies]
                 if !workspaceId.isEmpty {
                     value["workspace_id"] = workspaceId
                 }
-                if !value.isEmpty {
-                    try credentialStore.saveCredential(
-                        provider: selectedProvider.rawValue,
-                        kind: "cookie",
-                        account: "default",
-                        value: value
-                    )
-                }
+                try credentialStore.saveCredential(
+                    provider: selectedProvider.rawValue,
+                    kind: "cookie",
+                    account: "default",
+                    value: value
+                )
             }
 
-            saveMessage = "Saved"
+            saveMessage = "Saved!"
         } catch {
             saveMessage = "Error: \(error.localizedDescription)"
         }
+    }
+
+    private func parseCookieInput(_ input: String) -> [[String: String]] {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // cURL format: extract -b '...' or --cookie '...'
+        if trimmed.contains("curl") || trimmed.contains("-b ") || trimmed.contains("--cookie ") {
+            return parseCurlCookie(trimmed)
+        }
+
+        // "Cookie: name=value; name2=value2" header format
+        var cookieStr = trimmed
+        if cookieStr.hasPrefix("Cookie:") {
+            cookieStr = String(cookieStr.dropFirst(7)).trimmingCharacters(in: .whitespaces)
+        }
+
+        // Plain "name=value; name2=value2" format
+        return parsePlainCookie(cookieStr)
+    }
+
+    private func parseCurlCookie(_ input: String) -> [[String: String]] {
+        var cookies: [[String: String]] = []
+
+        // Match -b '...' or --cookie '...' (with single or double quotes)
+        let patterns = [
+            #"-b\s+'([^']+)'"#,
+            #"-b\s+\"([^\"]+)\""#,
+            #"--cookie\s+'([^']+)'"#,
+            #"--cookie\s+\"([^\"]+)\""#,
+            #"-b\s+([^\s]+)"#,
+            #"--cookie\s+([^\s]+)"#,
+        ]
+
+        for pattern in patterns {
+            if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+               let match = regex.firstMatch(in: input, range: NSRange(input.startIndex..., in: input)),
+               match.numberOfRanges >= 2,
+               let range = Range(match.range(at: 1), in: input) {
+                let cookieStr = String(input[range])
+                cookies = parsePlainCookie(cookieStr)
+                if !cookies.isEmpty { return cookies }
+            }
+        }
+
+        return cookies
+    }
+
+    private func parsePlainCookie(_ input: String) -> [[String: String]] {
+        var cookies: [[String: String]] = []
+        for part in input.split(separator: ";") {
+            let trimmed = part.trimmingCharacters(in: .whitespaces)
+            guard let eq = trimmed.firstIndex(of: "=") else { continue }
+            let name = String(trimmed[..<eq]).trimmingCharacters(in: .whitespaces)
+            let value = String(trimmed[trimmed.index(after: eq)...]).trimmingCharacters(in: .whitespaces)
+            if !name.isEmpty {
+                cookies.append(["name": name, "value": value])
+            }
+        }
+        return cookies
     }
 }

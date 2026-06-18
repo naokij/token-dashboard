@@ -58,6 +58,12 @@ struct MenuBarView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Settings")
+
+                Button(action: { NSApp.terminate(nil) }) {
+                    Image(systemName: "power")
+                }
+                .buttonStyle(.plain)
+                .help("Quit")
             }
         }
         .frame(width: 340)
