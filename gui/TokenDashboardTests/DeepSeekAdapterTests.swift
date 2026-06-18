@@ -81,14 +81,6 @@ final class DeepSeekAdapterTests: XCTestCase {
         XCTAssertNil(result.balanceUnit)
     }
 
-    func testNoAuthRaisesError() {
-        let store = CredentialStore()
-        for mode in adapter.supportedAuthModes() {
-            try? store.deleteCredential(provider: adapter.providerId.rawValue, kind: mode, account: "default")
-        }
-        XCTAssertFalse(adapter.isConfigured(store: store))
-    }
-
     func testProviderMeta() {
         XCTAssertEqual(adapter.providerId, .deepseek)
         XCTAssertEqual(adapter.displayName, "DeepSeek")

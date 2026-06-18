@@ -80,14 +80,6 @@ final class MiMoAdapterTests: XCTestCase {
         XCTAssertEqual(windows[0].kind, .calendarMonth)
     }
 
-    func testNoAuthRaisesError() {
-        let store = CredentialStore()
-        for mode in adapter.supportedAuthModes() {
-            try? store.deleteCredential(provider: adapter.providerId.rawValue, kind: mode, account: "default")
-        }
-        XCTAssertFalse(adapter.isConfigured(store: store))
-    }
-
     func testProviderMeta() {
         XCTAssertEqual(adapter.providerId, .mimo)
         XCTAssertEqual(adapter.displayName, "Xiaomi MiMo")

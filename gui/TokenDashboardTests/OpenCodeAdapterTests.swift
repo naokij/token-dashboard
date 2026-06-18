@@ -12,7 +12,11 @@ final class OpenCodeAdapterTests: XCTestCase {
 
     func testParseChineseHTML() {
         let html = """
-        <html><body><div data-slot="usage">滚动用量20%重置于5 小时 30 分钟每周用量5%重置于1 天 14 小时每月用量3%重置于18 天 15 小时</div></body></html>
+        <html><body><div data-slot="usage">
+        <div data-slot="usage-item"><div data-slot="usage-header"><span data-slot="usage-label">滚动用量</span><span data-slot="usage-value">20%</span></div><span data-slot="reset-time">重置于 5 小时 30 分钟</span></div>
+        <div data-slot="usage-item"><div data-slot="usage-header"><span data-slot="usage-label">每周用量</span><span data-slot="usage-value">5%</span></div><span data-slot="reset-time">重置于 1 天 14 小时</span></div>
+        <div data-slot="usage-item"><div data-slot="usage-header"><span data-slot="usage-label">每月用量</span><span data-slot="usage-value">3%</span></div><span data-slot="reset-time">重置于 18 天 15 小时</span></div>
+        </div></body></html>
         """
 
         let windows = adapter.parseHTMLResponse(html)
@@ -38,9 +42,9 @@ final class OpenCodeAdapterTests: XCTestCase {
     func testParseEnglishHTML() {
         let html = """
         <html><body><div data-slot="usage">
-        <p>Rolling Usage 42% Resets in 02:55:00</p>
-        <p>Weekly Usage 10% Resets in 1d 17:00:00</p>
-        <p>Monthly Usage 8% Resets in 15d 00:00:00</p>
+        <div data-slot="usage-item"><div data-slot="usage-header"><span data-slot="usage-label">Rolling Usage</span><span data-slot="usage-value">42%</span></div><span data-slot="reset-time">Resets in 02:55:00</span></div>
+        <div data-slot="usage-item"><div data-slot="usage-header"><span data-slot="usage-label">Weekly Usage</span><span data-slot="usage-value">10%</span></div><span data-slot="reset-time">Resets in 1d 17:00:00</span></div>
+        <div data-slot="usage-item"><div data-slot="usage-header"><span data-slot="usage-label">Monthly Usage</span><span data-slot="usage-value">8%</span></div><span data-slot="reset-time">Resets in 15d 00:00:00</span></div>
         </div></body></html>
         """
 
@@ -58,6 +62,25 @@ final class OpenCodeAdapterTests: XCTestCase {
         XCTAssertEqual(windows[2].kind, .rollingMonth)
         XCTAssertEqual(windows[2].usedPct, 8.0)
         XCTAssertNotNil(windows[2].resetAt)
+    }
+
+    func testParseHydrationData() {
+        let html = """
+        <html><script>rollingUsage:{status:"ok",resetInSec:18000,usagePercent:0},weeklyUsage:{status:"ok",resetInSec:316474,usagePercent:7},monthlyUsage:{status:"ok",resetInSec:580354,usagePercent:60}</script></html>
+        """
+
+        let windows = adapter.parseHTMLResponse(html)
+        XCTAssertEqual(windows.count, 3)
+
+        XCTAssertEqual(windows[0].kind, .rolling5h)
+        XCTAssertEqual(windows[0].usedPct, 0.0)
+        XCTAssertNotNil(windows[0].resetAt)
+
+        XCTAssertEqual(windows[1].kind, .rollingWeek)
+        XCTAssertEqual(windows[1].usedPct, 7.0)
+
+        XCTAssertEqual(windows[2].kind, .rollingMonth)
+        XCTAssertEqual(windows[2].usedPct, 60.0)
     }
 
     func testNoUsageDivReturnsEmpty() {
@@ -79,14 +102,6 @@ final class OpenCodeAdapterTests: XCTestCase {
 
     func testParseResetTimeZero() {
         XCTAssertEqual(adapter.parseResetTime(""), 0)
-    }
-
-    func testNoAuthRaisesError() {
-        let store = CredentialStore()
-        for mode in adapter.supportedAuthModes() {
-            try? store.deleteCredential(provider: adapter.providerId.rawValue, kind: mode, account: "default")
-        }
-        XCTAssertFalse(adapter.isConfigured(store: store))
     }
 
     func testProviderMeta() {

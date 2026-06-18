@@ -9,7 +9,6 @@ struct SettingsView: View {
     @State private var cookieText: String = ""
     @State private var workspaceId: String = ""
     @State private var saveMessage: String?
-    @State private var migrateMessage: String?
 
     private let credentialStore = CredentialStore()
     private let registry = AdapterRegistry()
@@ -64,23 +63,6 @@ struct SettingsView: View {
                 Text(msg)
                     .font(.caption)
                     .foregroundColor(msg.hasPrefix("Error") ? .red : .green)
-            }
-
-            Divider()
-
-            Button("Migrate from CLI credentials.json") {
-                do {
-                    try credentialStore.migrateFromLegacy()
-                    migrateMessage = "Migration complete"
-                } catch {
-                    migrateMessage = "Migration failed: \(error.localizedDescription)"
-                }
-            }
-
-            if let msg = migrateMessage {
-                Text(msg)
-                    .font(.caption)
-                    .foregroundColor(msg.contains("failed") ? .red : .green)
             }
 
             Spacer()

@@ -82,8 +82,13 @@ struct ProviderCardView: View {
     private func formatRemaining(_ date: Date) -> String {
         let interval = date.timeIntervalSinceNow
         guard interval > 0 else { return "soon" }
-        let hours = Int(interval / 3600)
+        let totalHours = Int(interval / 3600)
+        let days = totalHours / 24
+        let hours = totalHours % 24
         let minutes = Int((interval.truncatingRemainder(dividingBy: 3600)) / 60)
+        if days > 0 {
+            return "\(days)d \(hours)h"
+        }
         if hours > 0 {
             return "\(hours)h \(minutes)m"
         }

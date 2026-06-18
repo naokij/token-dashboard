@@ -2,7 +2,6 @@ import SwiftUI
 
 struct UsageBarView: View {
     let usedPct: Double?
-    var width: CGFloat = 200
 
     private var barColor: Color {
         guard let pct = usedPct else { return .gray }
@@ -24,16 +23,17 @@ struct UsageBarView: View {
                             .frame(width: max(0, geo.size.width * min(pct / 100.0, 1.0)), height: 10)
                     }
                 }
-                .frame(width: width, height: 10)
+                .frame(height: 10)
 
                 Text(String(format: "%.1f%%", pct))
                     .font(.caption)
                     .monospacedDigit()
                     .foregroundColor(barColor)
+                    .layoutPriority(1)
             } else {
                 RoundedRectangle(cornerRadius: 4)
                     .fill(Color.gray.opacity(0.2))
-                    .frame(width: width, height: 10)
+                    .frame(height: 10)
                     .overlay(
                         Text("unbounded")
                             .font(.caption2)

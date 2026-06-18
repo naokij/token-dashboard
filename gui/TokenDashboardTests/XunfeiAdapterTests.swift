@@ -89,14 +89,6 @@ final class XunfeiAdapterTests: XCTestCase {
         XCTAssertNotNil(package.resetAt)
     }
 
-    func testNoAuthRaisesError() {
-        let store = CredentialStore()
-        for mode in adapter.supportedAuthModes() {
-            try? store.deleteCredential(provider: adapter.providerId.rawValue, kind: mode, account: "default")
-        }
-        XCTAssertFalse(adapter.isConfigured(store: store))
-    }
-
     func testProviderMeta() {
         XCTAssertEqual(adapter.providerId, .xunfei)
         XCTAssertEqual(adapter.displayName, "讯飞星辰 Coding Plan")

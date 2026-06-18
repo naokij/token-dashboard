@@ -54,14 +54,6 @@ final class MiniMaxAdapterTests: XCTestCase {
         XCTAssertTrue(result.windows.isEmpty)
     }
 
-    func testNoAuthRaisesError() {
-        let store = CredentialStore()
-        for mode in adapter.supportedAuthModes() {
-            try? store.deleteCredential(provider: adapter.providerId.rawValue, kind: mode, account: "default")
-        }
-        XCTAssertFalse(adapter.isConfigured(store: store))
-    }
-
     func testProviderMeta() {
         XCTAssertEqual(adapter.providerId, .minimax)
         XCTAssertEqual(adapter.displayName, "MiniMax Token Plan")

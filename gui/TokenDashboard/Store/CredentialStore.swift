@@ -1,52 +1,41 @@
 import Foundation
-import KeychainAccess
+import CryptoKit
 
 final class CredentialStore {
-    static let serviceName = "com.token-dashboard"
+    private let directory: URL
 
-    private let keychain: Keychain
-
-    init(keychain: Keychain = Keychain(service: CredentialStore.serviceName)) {
-        self.keychain = keychain
+    init(directory: URL? = nil) {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        self.directory = directory ?? home.appendingPathComponent(".token-dashboard/credentials")
     }
 
     private func makeKey(provider: String, kind: String, account: String) -> String {
         "\(provider):\(account):\(kind)"
     }
 
+    private func fileURL(for key: String) -> URL {
+        directory.appendingPathComponent(key.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? key)
+    }
+
     func saveCredential(provider: String, kind: String, account: String, value: [String: Any]) throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let key = makeKey(provider: provider, kind: kind, account: account)
         let data = try JSONSerialization.data(withJSONObject: value)
-        keychain[key] = data.base64EncodedString()
+        try data.write(to: fileURL(for: key), options: .atomic)
     }
 
     func loadCredential(provider: String, kind: String, account: String) -> [String: Any]? {
         let key = makeKey(provider: provider, kind: kind, account: account)
-        guard let encoded = keychain[key] else { return nil }
-        guard let data = Data(base64Encoded: encoded) else { return nil }
+        let url = fileURL(for: key)
+        guard let data = try? Data(contentsOf: url) else { return nil }
         return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
     }
 
     func deleteCredential(provider: String, kind: String, account: String) throws {
         let key = makeKey(provider: provider, kind: kind, account: account)
-        try keychain.remove(key)
-    }
-
-    func loadLegacyCredentials() -> [String: [String: [String: [String: Any]]]]? {
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        let url = home.appendingPathComponent(".token-dashboard/credentials.json")
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        return try? JSONSerialization.jsonObject(with: data) as? [String: [String: [String: [String: Any]]]]
-    }
-
-    func migrateFromLegacy() throws {
-        guard let legacy = loadLegacyCredentials() else { return }
-        for (provider, accounts) in legacy {
-            for (account, kinds) in accounts {
-                for (kind, value) in kinds {
-                    try saveCredential(provider: provider, kind: kind, account: account, value: value)
-                }
-            }
+        let url = fileURL(for: key)
+        if FileManager.default.fileExists(atPath: url.path) {
+            try FileManager.default.removeItem(at: url)
         }
     }
 }
