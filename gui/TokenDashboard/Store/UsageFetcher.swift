@@ -7,8 +7,8 @@ final class UsageFetcher: ObservableObject {
     @Published var isLoading = false
     @Published var lastError: String?
 
-    private let registry = AdapterRegistry()
-    private let credentialStore = CredentialStore()
+    let registry = AdapterRegistry()
+    let credentialStore = CredentialStore()
     let sharedDefaults = SharedDefaults()
     private var timer: Timer?
 
@@ -24,32 +24,48 @@ final class UsageFetcher: ObservableObject {
 
         Task {
             var results: [UsageSnapshot] = []
-            for providerId in registry.allProviderIds {
-                let adapter = registry.adapter(for: providerId)
-                if !adapter.isConfigured(store: credentialStore) {
-                    continue
+            await withTaskGroup(of: UsageSnapshot?.self) { group in
+                for providerId in registry.allProviderIds {
+                    let adapter = registry.adapter(for: providerId)
+                    if !adapter.isConfigured(store: credentialStore) {
+                        continue
+                    }
+                    group.addTask {
+                        do {
+                            return try await adapter.fetch(store: self.credentialStore)
+                        } catch let err as AuthRequiredError {
+                            return UsageSnapshot(
+                                provider: providerId,
+                                fetchedAt: Date(),
+                                planKind: adapter.planKind,
+                                warnings: [err.message]
+                            )
+                        } catch {
+                            return UsageSnapshot(
+                                provider: providerId,
+                                fetchedAt: Date(),
+                                planKind: adapter.planKind,
+                                warnings: ["Fetch failed: \(error.localizedDescription)"]
+                            )
+                        }
+                    }
                 }
-                do {
-                    let snap = try await adapter.fetch(store: credentialStore)
-                    results.append(snap)
-                } catch let err as AuthRequiredError {
-                    results.append(UsageSnapshot(
-                        provider: providerId,
-                        fetchedAt: Date(),
-                        planKind: adapter.planKind,
-                        warnings: [err.message]
-                    ))
-                } catch {
-                    results.append(UsageSnapshot(
-                        provider: providerId,
-                        fetchedAt: Date(),
-                        planKind: adapter.planKind,
-                        warnings: ["Fetch failed: \(error.localizedDescription)"]
-                    ))
+                for await snapshot in group {
+                    if let snap = snapshot {
+                        results.append(snap)
+                    }
                 }
             }
 
-            self.snapshots = results
+            let hasChanges = self.snapshots.count != results.count || !zip(self.snapshots, results).allSatisfy { old, new in
+                old.provider == new.provider &&
+                old.primaryWindow()?.usedPct == new.primaryWindow()?.usedPct &&
+                old.balance == new.balance &&
+                old.warnings == new.warnings
+            }
+            if hasChanges {
+                self.snapshots = results
+            }
             self.isLoading = false
             self.sharedDefaults.saveSnapshots(results)
         }

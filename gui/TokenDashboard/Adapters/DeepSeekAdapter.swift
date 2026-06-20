@@ -47,14 +47,12 @@ final class DeepSeekAdapter: Adapter {
         )
         snap.balance = data.balance
         snap.balanceUnit = data.balanceUnit
-        snap.raw = data.raw
         return snap
     }
 
     struct ParsedBalance {
         var balance: Double?
         var balanceUnit: QuotaUnit?
-        var raw: [String: JSONValue] = [:]
     }
 
     func parseResponse(_ data: [String: Any]) -> ParsedBalance {
@@ -79,7 +77,6 @@ final class DeepSeekAdapter: Adapter {
                 result.balanceUnit = currency == "CNY" ? .cny : .usd
             }
         }
-        result.raw = data.mapValues { JSONValue.from($0) }
         return result
     }
 

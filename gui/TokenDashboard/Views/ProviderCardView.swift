@@ -76,7 +76,7 @@ struct ProviderCardView: View {
             }
         }
         .padding(12)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
     }
 
     private func formatRemaining(_ date: Date) -> String {

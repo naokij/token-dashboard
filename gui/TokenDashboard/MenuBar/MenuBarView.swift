@@ -1,5 +1,13 @@
 import SwiftUI
 
+private enum Formatters {
+    static let relative: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .abbreviated
+        return f
+    }()
+}
+
 struct MenuBarView: View {
     @ObservedObject var fetcher: UsageFetcher
     @Environment(\.openWindow) private var openWindow
@@ -10,10 +18,7 @@ struct MenuBarView: View {
                 Text("Token Dashboard")
                     .font(.headline)
                 Spacer()
-                if fetcher.isLoading {
-                    ProgressView()
-                        .scaleEffect(0.6)
-                }
+                LoadingIndicator(isLoading: fetcher.isLoading)
             }
 
             if fetcher.snapshots.isEmpty && !fetcher.isLoading {
@@ -21,9 +26,7 @@ struct MenuBarView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
             } else {
-                ForEach(fetcher.snapshots) { snapshot in
-                    ProviderCardView(snapshot: snapshot)
-                }
+                SnapshotListView(snapshots: fetcher.snapshots)
             }
 
             if let error = fetcher.lastError {
@@ -74,14 +77,33 @@ struct MenuBarView: View {
     }
 
     private func formatTime(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
+        Formatters.relative.localizedString(for: date, relativeTo: Date())
     }
 
     private func openSettings() {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         openWindow(id: "settings")
+    }
+}
+
+private struct LoadingIndicator: View {
+    let isLoading: Bool
+
+    var body: some View {
+        if isLoading {
+            ProgressView()
+                .scaleEffect(0.6)
+        }
+    }
+}
+
+private struct SnapshotListView: View {
+    let snapshots: [UsageSnapshot]
+
+    var body: some View {
+        ForEach(snapshots) { snapshot in
+            ProviderCardView(snapshot: snapshot)
+        }
     }
 }

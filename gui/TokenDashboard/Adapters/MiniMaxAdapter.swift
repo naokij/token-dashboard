@@ -46,13 +46,11 @@ final class MiniMaxAdapter: Adapter {
             authMode: "api_key"
         )
         snap.windows = result.windows
-        snap.raw = result.raw
         return snap
     }
 
     struct ParsedAPI {
         var windows: [QuotaWindow] = []
-        var raw: [String: JSONValue] = [:]
     }
 
     func parseAPIResponse(_ data: [String: Any]) -> ParsedAPI {
@@ -73,7 +71,7 @@ final class MiniMaxAdapter: Adapter {
                 unit: .percent,
                 usedPct: 100.0 - intervalPct,
                 resetAt: endMs.map { Date(timeIntervalSince1970: $0 / 1000.0) },
-                raw: model.mapValues { JSONValue.from($0) }
+                raw: [:]
             ))
 
             let weeklyPct = model["current_weekly_remaining_percent"] as? Double ?? 100
@@ -87,11 +85,11 @@ final class MiniMaxAdapter: Adapter {
                 unit: .percent,
                 usedPct: 100.0 - weeklyPct,
                 resetAt: weeklyEndMs.map { Date(timeIntervalSince1970: $0 / 1000.0) },
-                raw: model.mapValues { JSONValue.from($0) }
+                raw: [:]
             ))
         }
 
-        return ParsedAPI(windows: windows, raw: data.mapValues { JSONValue.from($0) })
+        return ParsedAPI(windows: windows)
     }
 
     private func fetchViaAPI(apiKey: String) async throws -> ParsedAPI {

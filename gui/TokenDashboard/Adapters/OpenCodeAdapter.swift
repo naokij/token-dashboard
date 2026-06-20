@@ -8,13 +8,8 @@ final class OpenCodeAdapter: Adapter {
     let planKind: PlanKind = .codingPlan
     let account: String
 
-    private let session: URLSession
-
     init(account: String = "default") {
         self.account = account
-        let config = URLSessionConfiguration.default
-        let delegate = CookiePreservingRedirectDelegate()
-        self.session = URLSession(configuration: config, delegate: delegate, delegateQueue: nil)
     }
 
     func supportedAuthModes() -> [String] {
@@ -62,7 +57,7 @@ final class OpenCodeAdapter: Adapter {
             goRequest.setValue("text/html", forHTTPHeaderField: "Accept")
             goRequest.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", forHTTPHeaderField: "User-Agent")
 
-            let (goData, goResponse) = try await session.data(for: goRequest)
+            let (goData, goResponse) = try await URLSession.shared.data(for: goRequest)
             let goStatus = (goResponse as? HTTPURLResponse)?.statusCode ?? -1
 
             if goStatus == 200 {
@@ -110,7 +105,7 @@ final class OpenCodeAdapter: Adapter {
 
         for urlStr in urls {
             let request = makeRequest(url: urlStr, cookieHeader: cookieHeader)
-            guard let (data, response) = try? await session.data(for: request),
+            guard let (data, response) = try? await URLSession.shared.data(for: request),
                   let httpResponse = response as? HTTPURLResponse,
                   httpResponse.statusCode == 200,
                   let html = String(data: data, encoding: .utf8) else {
@@ -263,19 +258,5 @@ final class OpenCodeAdapter: Adapter {
         }
 
         return totalSeconds
-    }
-}
-
-private final class CookiePreservingRedirectDelegate: NSObject, URLSessionTaskDelegate {
-    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
-        var newRequest = request
-        if let originalHeaders = task.originalRequest?.allHTTPHeaderFields {
-            for (key, value) in originalHeaders {
-                if newRequest.value(forHTTPHeaderField: key) == nil {
-                    newRequest.setValue(value, forHTTPHeaderField: key)
-                }
-            }
-        }
-        completionHandler(newRequest)
     }
 }

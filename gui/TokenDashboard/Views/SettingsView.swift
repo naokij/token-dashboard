@@ -10,8 +10,8 @@ struct SettingsView: View {
     @State private var workspaceId: String = ""
     @State private var saveMessage: String?
 
-    private let credentialStore = CredentialStore()
-    private let registry = AdapterRegistry()
+    let credentialStore: CredentialStore
+    let registry: AdapterRegistry
 
     var body: some View {
         TabView {

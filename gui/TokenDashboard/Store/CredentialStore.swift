@@ -1,8 +1,10 @@
 import Foundation
 import CryptoKit
 
-final class CredentialStore {
+final class CredentialStore: @unchecked Sendable {
     private let directory: URL
+    private var cache: [String: [String: Any]] = [:]
+    private let cacheLock = NSLock()
 
     init(directory: URL? = nil) {
         let home = FileManager.default.homeDirectoryForCurrentUser
@@ -22,17 +24,35 @@ final class CredentialStore {
         let key = makeKey(provider: provider, kind: kind, account: account)
         let data = try JSONSerialization.data(withJSONObject: value)
         try data.write(to: fileURL(for: key), options: .atomic)
+        cacheLock.lock()
+        cache[key] = value
+        cacheLock.unlock()
     }
 
     func loadCredential(provider: String, kind: String, account: String) -> [String: Any]? {
         let key = makeKey(provider: provider, kind: kind, account: account)
+        cacheLock.lock()
+        if let cached = cache[key] {
+            cacheLock.unlock()
+            return cached
+        }
+        cacheLock.unlock()
         let url = fileURL(for: key)
         guard let data = try? Data(contentsOf: url) else { return nil }
-        return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let value = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        if let value {
+            cacheLock.lock()
+            cache[key] = value
+            cacheLock.unlock()
+        }
+        return value
     }
 
     func deleteCredential(provider: String, kind: String, account: String) throws {
         let key = makeKey(provider: provider, kind: kind, account: account)
+        cacheLock.lock()
+        cache.removeValue(forKey: key)
+        cacheLock.unlock()
         let url = fileURL(for: key)
         if FileManager.default.fileExists(atPath: url.path) {
             try FileManager.default.removeItem(at: url)

@@ -19,7 +19,10 @@ struct TokenDashboardApp: App {
         .menuBarExtraStyle(.window)
 
         Window("Token Dashboard Settings", id: "settings") {
-            SettingsView(fetcher: fetcher, config: config)
+            SettingsView(fetcher: fetcher, config: config, credentialStore: fetcher.credentialStore, registry: fetcher.registry)
+                .onDisappear {
+                    NSApp.setActivationPolicy(.accessory)
+                }
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)

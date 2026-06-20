@@ -1,6 +1,13 @@
 import Foundation
 
 final class XunfeiAdapter: Adapter {
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        f.timeZone = TimeZone(identifier: "Asia/Shanghai")
+        return f
+    }()
+
     let providerId: ProviderId = .xunfei
     let displayName: String = "讯飞星辰 Coding Plan"
     let homeURL: String = "https://maas.xfyun.cn/"
@@ -75,7 +82,6 @@ final class XunfeiAdapter: Adapter {
             snap.planName = plan["name"] as? String ?? "Coding Plan"
             snap.accountEmail = plan["appId"] as? String
             snap.windows = parseUsage(plan)
-            snap.raw = plan.mapValues { JSONValue.from($0) }
         }
 
         return snap
@@ -96,7 +102,7 @@ final class XunfeiAdapter: Adapter {
                 remaining: rp5hLimit - rp5hUsage,
                 unit: .requests,
                 usedPct: rp5hUsage / rp5hLimit * 100.0,
-                raw: usage.mapValues { JSONValue.from($0) }
+                raw: [:]
             ))
         }
 
@@ -111,7 +117,7 @@ final class XunfeiAdapter: Adapter {
                 remaining: rpwLimit - rpwUsage,
                 unit: .requests,
                 usedPct: rpwUsage / rpwLimit * 100.0,
-                raw: usage.mapValues { JSONValue.from($0) }
+                raw: [:]
             ))
         }
 
@@ -120,10 +126,7 @@ final class XunfeiAdapter: Adapter {
         if packageLimit > 0 {
             var resetAt: Date?
             if let expiresAt = plan["expiresAt"] as? String {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                formatter.timeZone = TimeZone(identifier: "Asia/Shanghai")
-                resetAt = formatter.date(from: expiresAt)
+                resetAt = Self.dateFormatter.date(from: expiresAt)
             }
             windows.append(QuotaWindow(
                 kind: .fixedPeriod,
@@ -134,7 +137,7 @@ final class XunfeiAdapter: Adapter {
                 unit: .requests,
                 usedPct: packageUsage / packageLimit * 100.0,
                 resetAt: resetAt,
-                raw: usage.mapValues { JSONValue.from($0) }
+                raw: [:]
             ))
         }
 

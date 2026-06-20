@@ -3,6 +3,7 @@ import Foundation
 final class SharedDefaults {
     static let appGroupIdentifier = "group.com.token-dashboard"
     private let defaults: UserDefaults?
+    private var lastSavedData: Data?
 
     init() {
         self.defaults = UserDefaults(suiteName: SharedDefaults.appGroupIdentifier)
@@ -12,6 +13,8 @@ final class SharedDefaults {
         guard let defaults = defaults else { return }
         let encoder = JSONEncoder()
         guard let data = try? encoder.encode(snapshots) else { return }
+        if data == lastSavedData { return }
+        lastSavedData = data
         defaults.set(data, forKey: "snapshots")
         defaults.set(Date(), forKey: "lastUpdated")
     }

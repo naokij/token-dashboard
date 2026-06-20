@@ -95,7 +95,7 @@ final class MiMoAdapter: Adapter {
                         remaining: limit > 0 ? limit - used : nil,
                         unit: .credits,
                         usedPct: usedPct,
-                        raw: item.mapValues { JSONValue.from($0) }
+                        raw: [:]
                     ))
                 }
             }
@@ -116,7 +116,7 @@ final class MiMoAdapter: Adapter {
                         remaining: limit > 0 ? limit - used : nil,
                         unit: .credits,
                         usedPct: usedPct,
-                        raw: item.mapValues { JSONValue.from($0) }
+                        raw: [:]
                     ))
                 }
             }

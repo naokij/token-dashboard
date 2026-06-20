@@ -30,3 +30,11 @@ uv.lock
 .vscode/
 .idea/
 .DS_Store
+
+# Build artifacts
+gui/.build-base/
+gui/.build-opt/
+gui/.build-render-opt/
+.traces/
+*.trace/
+default.profraw
