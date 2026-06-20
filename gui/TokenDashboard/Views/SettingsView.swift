@@ -55,8 +55,19 @@ struct SettingsView: View {
                     .foregroundColor(.secondary)
             }
 
-            Button("Save") {
-                saveCredential()
+            HStack {
+                Button("Save") {
+                    saveCredential()
+                }
+
+                Spacer()
+
+                if hasCredential {
+                    Button("Delete") {
+                        deleteCredential()
+                    }
+                    .foregroundColor(.red)
+                }
             }
 
             if let msg = saveMessage {
@@ -118,6 +129,11 @@ struct SettingsView: View {
         saveMessage = nil
     }
 
+    private var hasCredential: Bool {
+        let adapter = registry.adapter(for: selectedProvider)
+        return adapter.isConfigured(store: credentialStore)
+    }
+
     private func saveCredential() {
         let adapter = registry.adapter(for: selectedProvider)
         let modes = adapter.supportedAuthModes()
@@ -154,6 +170,18 @@ struct SettingsView: View {
         } catch {
             saveMessage = "Error: \(error.localizedDescription)"
         }
+    }
+
+    private func deleteCredential() {
+        let adapter = registry.adapter(for: selectedProvider)
+        for mode in adapter.supportedAuthModes() {
+            try? credentialStore.deleteCredential(provider: selectedProvider.rawValue, kind: mode, account: "default")
+        }
+        apiKey = ""
+        cookieText = ""
+        workspaceId = ""
+        saveMessage = "Deleted"
+        fetcher.fetchAll()
     }
 
     private func parseCookieInput(_ input: String) -> [[String: String]] {
