@@ -13,6 +13,7 @@ struct UsageSnapshot: Codable, Identifiable {
     var accountEmail: String?
     var accountName: String
     var authMode: String
+    var planExpiresAt: Date?
     var warnings: [String]
     var raw: [String: JSONValue]
 
@@ -27,6 +28,7 @@ struct UsageSnapshot: Codable, Identifiable {
         case accountEmail = "account_email"
         case accountName = "account_name"
         case authMode = "auth_mode"
+        case planExpiresAt = "plan_expires_at"
         case warnings
         case raw
     }
@@ -42,6 +44,7 @@ struct UsageSnapshot: Codable, Identifiable {
         accountEmail: String? = nil,
         accountName: String = "default",
         authMode: String = "",
+        planExpiresAt: Date? = nil,
         warnings: [String] = [],
         raw: [String: JSONValue] = [:]
     ) {
@@ -55,6 +58,7 @@ struct UsageSnapshot: Codable, Identifiable {
         self.accountEmail = accountEmail
         self.accountName = accountName
         self.authMode = authMode
+        self.planExpiresAt = planExpiresAt
         self.warnings = warnings
         self.raw = raw
     }

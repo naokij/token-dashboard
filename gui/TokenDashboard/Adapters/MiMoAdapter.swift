@@ -65,6 +65,21 @@ final class MiMoAdapter: Adapter {
         }
 
         do {
+            let detailData = try await fetchTokenPlanDetail(headers: headers)
+            if detailData["code"] as? Int == 0,
+               let data = detailData["data"] as? [String: Any] {
+                if let planName = data["planName"] as? String {
+                    snap.planName = planName
+                }
+                if let periodEnd = data["currentPeriodEnd"] as? String {
+                    snap.planExpiresAt = parseDate(periodEnd)
+                }
+            }
+        } catch {
+            snap.warnings.append("Plan detail fetch failed: \(error.localizedDescription)")
+        }
+
+        do {
             let planData = try await fetchTokenPlan(headers: headers)
             if planData["code"] as? Int == 0,
                let data = planData["data"] as? [String: Any] {
@@ -72,6 +87,14 @@ final class MiMoAdapter: Adapter {
             }
         } catch {
             snap.warnings.append("Token plan fetch failed: \(error.localizedDescription)")
+        }
+
+        if let expiresAt = snap.planExpiresAt {
+            for i in snap.windows.indices {
+                if snap.windows[i].kind == .calendarMonth && snap.windows[i].resetAt == nil {
+                    snap.windows[i].resetAt = expiresAt
+                }
+            }
         }
 
         return snap
@@ -145,5 +168,23 @@ final class MiMoAdapter: Adapter {
         }
         let (data, _) = try await URLSession.shared.data(for: request)
         return try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+    }
+
+    private func fetchTokenPlanDetail(headers: [String: String]) async throws -> [String: Any] {
+        let url = URL(string: "https://platform.xiaomimimo.com/api/v1/tokenPlan/detail")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        for (key, value) in headers {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+    }
+
+    private func parseDate(_ str: String) -> Date? {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        fmt.timeZone = TimeZone(identifier: "Asia/Shanghai")
+        return fmt.date(from: str)
     }
 }

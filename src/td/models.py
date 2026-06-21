@@ -110,6 +110,7 @@ class UsageSnapshot(BaseModel):
     account_email: str | None = None  # If known via cookie
     account_name: str = "default"  # Account name for multi-account support
     auth_mode: str = ""  # How the data was obtained: "api" / "cookie" / "manual"
+    plan_expires_at: datetime | None = None  # When the current plan period ends
     warnings: list[str] = []  # Adapter-side messages, e.g. "cookie expired, please re-login"
     raw: dict[str, Any] = Field(default_factory=dict)
 

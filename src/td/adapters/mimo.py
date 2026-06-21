@@ -69,6 +69,25 @@ class MiMoAdapter(Adapter):
         }
 
         async with httpx.AsyncClient(timeout=15) as client:
+            # Fetch token plan detail (plan name + expiry)
+            try:
+                r = await client.get(
+                    f"{MIMO_API_BASE}/tokenPlan/detail",
+                    headers=headers,
+                )
+                if r.status_code == 200:
+                    data = r.json()
+                    if data.get("code") == 0:
+                        detail_data = data.get("data", {})
+                        if plan_name := detail_data.get("planName"):
+                            snap.plan_name = plan_name
+                        if period_end := detail_data.get("currentPeriodEnd"):
+                            snap.plan_expires_at = datetime.strptime(
+                                period_end, "%Y-%m-%d %H:%M:%S"
+                            ).replace(tzinfo=UTC)
+            except Exception as e:
+                snap.warnings.append(f"Plan detail fetch failed: {e}")
+
             # Fetch balance (pay-as-you-go)
             try:
                 r = await client.get(
@@ -98,6 +117,12 @@ class MiMoAdapter(Adapter):
                         snap.windows = windows
             except Exception as e:
                 snap.warnings.append(f"Token plan fetch failed: {e}")
+
+        # Set reset_at on calendar_month window from plan_expires_at
+        if snap.plan_expires_at:
+            for w in snap.windows:
+                if w.kind == WindowKind.CALENDAR_MONTH and w.reset_at is None:
+                    w.reset_at = snap.plan_expires_at
 
         return snap
 

@@ -19,6 +19,11 @@ struct ProviderCardView: View {
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                 }
+                if let expiresAt = snapshot.planExpiresAt {
+                    Text("Exp: \(formatDate(expiresAt))")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
             }
 
             if snapshot.windows.isEmpty && snapshot.balance == nil {
@@ -93,5 +98,11 @@ struct ProviderCardView: View {
             return "\(hours)h \(minutes)m"
         }
         return "\(minutes)m"
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MM/dd HH:mm"
+        return fmt.string(from: date)
     }
 }
