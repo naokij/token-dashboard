@@ -35,6 +35,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "mimo": {"enabled": True, "auth": "cookie"},
         "xunfei": {"enabled": True, "auth": "cookie"},
         "deepseek": {"enabled": True, "auth": "api_key"},
+        "volcark": {"enabled": True, "auth": "api_key"},
     },
     "alerts": {
         # alert when the most-constrained window's used% exceeds this

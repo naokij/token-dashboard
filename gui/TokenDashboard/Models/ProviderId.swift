@@ -6,4 +6,5 @@ enum ProviderId: String, Codable, CaseIterable {
     case mimo
     case xunfei
     case deepseek
+    case volcark
 }

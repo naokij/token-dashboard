@@ -1,6 +1,6 @@
 # Token Dashboard
 
-统一的 AI 服务用量查看器，支持 OpenCode、MiniMax、MiMo、讯飞、DeepSeek。
+统一的 AI 服务用量查看器，支持 OpenCode、MiniMax、MiMo、讯飞、DeepSeek、火山方舟 Agent Plan。
 
 - **CLI**：Python 终端工具，`td status` / `td watch` 查看用量
 - **GUI**：macOS 菜单栏应用，原生 Swift/SwiftUI，无 Python 依赖 → [GUI 文档](docs/gui.md)
@@ -14,6 +14,7 @@
 | Xiaomi MiMo | Token Plan + 按量付费 | API | cookie |
 | 讯飞星辰 Coding Plan | 请求次数 | API | cookie |
 | DeepSeek | 按量付费（余额） | API | api_key |
+| 火山方舟 Agent Plan | AFP 额度（5h/日/周/月） | API（SigV4） | access_key + secret_key |
 
 ## 安装
 
@@ -39,6 +40,13 @@ uv run td list
 uv run td add minimax --api-key sk-cp-...
 uv run td add deepseek --api-key sk-...
 ```
+
+**AK/SK 方式**（火山方舟 Agent Plan）：
+```bash
+uv run td add volcark --access-key <AK> --secret-key <SK>
+```
+
+AK/SK 来源：火山引擎控制台 → 访问控制 → API 访问密钥。
 
 **Cookie 方式**（OpenCode、MiMo、讯飞）：
 
@@ -95,6 +103,7 @@ providers:
   mimo:    { enabled: true, auth: cookie }
   xunfei:  { enabled: true, auth: cookie }
   deepseek: { enabled: true, auth: api_key }
+  volcark:  { enabled: true, auth: api_key }
 
 alerts:
   warn_pct: 70
@@ -120,6 +129,7 @@ uv run td reset minimax -a main  # 指定账号
 | 讯飞 | `ssoSessionId` |
 | MiniMax | 不需要（用 API key） |
 | DeepSeek | 不需要（用 API key） |
+| 火山方舟 Agent Plan | 不需要（用 AK/SK） |
 
 ## 项目结构
 
@@ -137,7 +147,8 @@ src/td/
     ├── minimax.py      # MiniMax Token Plan
     ├── mimo.py         # Xiaomi MiMo
     ├── xunfei.py       # 讯飞星辰
-    └── deepseek.py     # DeepSeek
+    ├── deepseek.py     # DeepSeek
+    └── volcark.py      # 火山方舟 Agent Plan
 ```
 
 ## 技术栈
@@ -151,7 +162,7 @@ src/td/
 
 ## 未来规划
 
-- **更多 provider**：智谱 GLM、阿里云百炼、火山方舟
+- **更多 provider**：智谱 GLM、阿里云百炼
 - **告警系统**：阈值突破时通知
 - **历史数据**：SQLite 存储，趋势图
 - **macOS ControlWidget**：系统控制中心小组件（需 macOS 26 SDK）

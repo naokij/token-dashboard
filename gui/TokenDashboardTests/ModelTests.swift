@@ -12,8 +12,9 @@ final class ModelTests: XCTestCase {
             (.mimo, "mimo"),
             (.xunfei, "xunfei"),
             (.deepseek, "deepseek"),
+            (.volcark, "volcark"),
         ]
-        XCTAssertEqual(ProviderId.allCases.count, 5)
+        XCTAssertEqual(ProviderId.allCases.count, 6)
         for (value, raw) in expected {
             XCTAssertEqual(value.rawValue, raw)
         }

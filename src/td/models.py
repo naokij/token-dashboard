@@ -25,6 +25,7 @@ class ProviderId(str, Enum):
     MIMO = "mimo"
     XUNFEI = "xunfei"
     DEEPSEEK = "deepseek"
+    VOLCARK = "volcark"
 
 
 class PlanKind(str, Enum):
@@ -62,6 +63,7 @@ class WindowKind(str, Enum):
     CALENDAR_DAY = "calendar_day"
     FIXED_PERIOD = "fixed_period"  # A subscription period start->end
     BALANCE = "balance"  # Pay-as-you-go running balance (no reset)
+    ROLLING_DAY = "rolling_day"
 
 
 class QuotaWindow(BaseModel):

@@ -6,6 +6,8 @@ struct SettingsView: View {
 
     @State private var selectedProvider: ProviderId = .opencode
     @State private var apiKey: String = ""
+    @State private var accessKey: String = ""
+    @State private var secretKey: String = ""
     @State private var cookieText: String = ""
     @State private var workspaceId: String = ""
     @State private var saveMessage: String?
@@ -35,7 +37,15 @@ struct SettingsView: View {
             let adapter = registry.adapter(for: selectedProvider)
             let modes = adapter.supportedAuthModes()
 
-            if modes.contains("api_key") {
+            if selectedProvider == .volcark {
+                SecureField("Access Key (AK)", text: $accessKey)
+                    .textFieldStyle(.roundedBorder)
+                SecureField("Secret Key (SK)", text: $secretKey)
+                    .textFieldStyle(.roundedBorder)
+                Text("Get AK/SK from Volcengine console → Access Control → API Key")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            } else if modes.contains("api_key") {
                 SecureField("API Key (e.g. sk-...)", text: $apiKey)
                     .textFieldStyle(.roundedBorder)
             }
@@ -104,12 +114,21 @@ struct SettingsView: View {
         let adapter = registry.adapter(for: selectedProvider)
         let modes = adapter.supportedAuthModes()
 
-        if modes.contains("api_key"),
+        if selectedProvider == .volcark,
+           let cred = credentialStore.loadCredential(provider: selectedProvider.rawValue, kind: "api_key", account: "default") {
+            accessKey = cred["access_key"] as? String ?? ""
+            secretKey = cred["secret_key"] as? String ?? ""
+            apiKey = ""
+        } else if modes.contains("api_key"),
            let cred = credentialStore.loadCredential(provider: selectedProvider.rawValue, kind: "api_key", account: "default"),
            let key = cred["key"] as? String {
             apiKey = key
+            accessKey = ""
+            secretKey = ""
         } else {
             apiKey = ""
+            accessKey = ""
+            secretKey = ""
         }
 
         if modes.contains("cookie"),
@@ -139,7 +158,18 @@ struct SettingsView: View {
         let modes = adapter.supportedAuthModes()
 
         do {
-            if modes.contains("api_key") && !apiKey.isEmpty {
+            if selectedProvider == .volcark {
+                if accessKey.isEmpty || secretKey.isEmpty {
+                    saveMessage = "Error: both Access Key and Secret Key required"
+                    return
+                }
+                try credentialStore.saveCredential(
+                    provider: selectedProvider.rawValue,
+                    kind: "api_key",
+                    account: "default",
+                    value: ["access_key": accessKey, "secret_key": secretKey]
+                )
+            } else if modes.contains("api_key") && !apiKey.isEmpty {
                 try credentialStore.saveCredential(
                     provider: selectedProvider.rawValue,
                     kind: "api_key",
@@ -178,6 +208,8 @@ struct SettingsView: View {
             try? credentialStore.deleteCredential(provider: selectedProvider.rawValue, kind: mode, account: "default")
         }
         apiKey = ""
+        accessKey = ""
+        secretKey = ""
         cookieText = ""
         workspaceId = ""
         saveMessage = "Deleted"

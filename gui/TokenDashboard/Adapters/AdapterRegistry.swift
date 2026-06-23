@@ -8,6 +8,7 @@ final class AdapterRegistry {
         case .mimo: return MiMoAdapter(account: account)
         case .xunfei: return XunfeiAdapter(account: account)
         case .deepseek: return DeepSeekAdapter(account: account)
+        case .volcark: return VolcArkAdapter(account: account)
         }
     }
 

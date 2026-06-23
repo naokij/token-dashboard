@@ -119,11 +119,16 @@ def watch(provider, interval, once):
 @click.option("--api-key", help="API key (for api_key auth mode)")
 @click.option("--token-plan-key", help="MiMo Token Plan key (tp-...)")
 @click.option("--payg-key", help="MiMo pay-as-you-go key (sk-...)")
+@click.option("--access-key", help="Volcengine access key id (AK)")
+@click.option("--secret-key", help="Volcengine secret access key (SK)")
 @click.option("--account", "-a", default="default", help="Account name (default: 'default')")
-def add(provider_id, api_key, token_plan_key, payg_key, account):
+def add(provider_id, api_key, token_plan_key, payg_key, access_key, secret_key, account):
     """Save credentials for a provider without going through the browser."""
-    if not (api_key or token_plan_key or payg_key):
-        raise click.UsageError("provide --api-key, --token-plan-key, or --payg-key")
+    if not (api_key or token_plan_key or payg_key or (access_key and secret_key)):
+        raise click.UsageError(
+            "provide --api-key, --token-plan-key, --payg-key, "
+            "or both --access-key and --secret-key"
+        )
 
     cred: dict = {}
     if api_key:
@@ -132,6 +137,9 @@ def add(provider_id, api_key, token_plan_key, payg_key, account):
         cred["token_plan_key"] = token_plan_key
     if payg_key:
         cred["payg_key"] = payg_key
+    if access_key and secret_key:
+        cred["access_key"] = access_key
+        cred["secret_key"] = secret_key
 
     save_credential(provider_id, "api_key", cred, account=account)
     click.echo(f"✓ saved api_key for {provider_id} (account: {account})")
